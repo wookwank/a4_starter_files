@@ -33,8 +33,8 @@ class ArpCache : public IArpCache {
 
    private:
     void loop();
-    void sendArpRequest(uint32_t ip);
-    void sendArpResponse();
+    void sendArpRequest(const uint32_t);
+    void sendArpResponse(const uint32_t, const mac_addr);
 
     std::chrono::milliseconds timeout;
 
