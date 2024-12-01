@@ -21,6 +21,8 @@ public:
      */
     void handlePacket(std::vector<uint8_t> packet, std::string iface);
 
+    bool isValidIPChecksum(const sr_ip_hdr_t *ipHeader);
+
 private:
     std::mutex mutex;
 
