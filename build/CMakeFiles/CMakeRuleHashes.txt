@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+9e95cc47bae4184d7f0d639386c93f54 proto/router_bridge.pb.h

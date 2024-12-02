@@ -258,3 +258,12 @@ void ArpCache::queuePacket(uint32_t dest_ip, const Packet& packet, const std::st
         sendArpRequest(dest_ip);
     }
 }
+
+// Checks if the request has been sent and is waiting for a response
+bool ArpCache::requestExists(uint32_t dest_ip) {
+    auto it = requests.find(dest_ip);
+    if (it != requests.end()) {
+        return true;
+    }
+    return false;
+}

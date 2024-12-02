@@ -35,6 +35,7 @@ class ArpCache : public IArpCache {
     void loop();
     void sendArpRequest(const uint32_t);
     void sendArpResponse(const uint32_t, const mac_addr);
+    bool requestExists(uint32_t dest_ip);
 
     std::chrono::milliseconds timeout;
 

@@ -1,0 +1,14 @@
+# Target labels
+ spdlog-populate
+# Source files and their labels
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/CMakeFiles/spdlog-populate
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/CMakeFiles/spdlog-populate.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/CMakeFiles/spdlog-populate-complete.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-build.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-configure.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-download.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-install.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-mkdir.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-patch.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-test.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/spdlog-subbuild/spdlog-populate-prefix/src/spdlog-populate-stamp/spdlog-populate-update.rule

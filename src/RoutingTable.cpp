@@ -46,8 +46,8 @@ std::optional<RoutingEntry> RoutingTable::getRoutingEntry(ip_addr ip) {
 
     for (const auto& entry : routingEntries) {
         // Apply the subnet mask to both `ip` and `entry.dest`
-        uint32_t maskedIp = ip & entry.mask;
-        uint32_t maskedDest = entry.dest & entry.mask;
+        ip_addr maskedIp = ip & entry.mask;
+        ip_addr maskedDest = entry.dest & entry.mask;
 
         if (maskedIp == maskedDest) {
             // Count the number of significant bits in the mask

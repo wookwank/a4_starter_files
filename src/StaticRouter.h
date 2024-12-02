@@ -21,7 +21,25 @@ public:
      */
     void handlePacket(std::vector<uint8_t> packet, std::string iface);
 
+    void handleARP(const std::vector<uint8_t>& packet, const std::string& iface);
+
+    void handleIP(const std::vector<uint8_t>& packet, const std::string& iface);
+
     bool isValidIPChecksum(const sr_ip_hdr_t *ipHeader);
+
+    bool isFinalDestination(const sr_ip_hdr_t *ipHeader);
+
+    bool isARPPacketForRouter(const sr_arp_hdr_t* arpHeader);
+
+    void handleEchoRequest(sr_ip_hdr_t *ipHeader, sr_icmp_hdr_t *icmpHeader, const std::string& iface);
+
+    void sendPortUnreachable(sr_ip_hdr_t* ipHeader, const std::string& iface);
+
+    void sendICMPDestinationUnreachable(const sr_ip_hdr_t* ipHeader, const std::string& iface);
+
+    void sendICMPTimeExceeded(const sr_ip_hdr_t* ipHeader, const std::string& iface);
+
+    
 
 private:
     std::mutex mutex;

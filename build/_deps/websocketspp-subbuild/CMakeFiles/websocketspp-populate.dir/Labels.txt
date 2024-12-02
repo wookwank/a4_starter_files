@@ -1,0 +1,14 @@
+# Target labels
+ websocketspp-populate
+# Source files and their labels
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/CMakeFiles/websocketspp-populate
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/CMakeFiles/websocketspp-populate.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/CMakeFiles/websocketspp-populate-complete.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-build.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-configure.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-download.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-install.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-mkdir.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-patch.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-test.rule
+/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-update.rule

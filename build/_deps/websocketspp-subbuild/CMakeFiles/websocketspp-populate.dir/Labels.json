@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/CMakeFiles/websocketspp-populate"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/CMakeFiles/websocketspp-populate.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/CMakeFiles/websocketspp-populate-complete.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-build.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-configure.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-download.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-install.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-mkdir.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-patch.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-test.rule"
+		},
+		{
+			"file" : "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/build/_deps/websocketspp-subbuild/websocketspp-populate-prefix/src/websocketspp-populate-stamp/websocketspp-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"websocketspp-populate"
+		],
+		"name" : "websocketspp-populate"
+	}
+}
