@@ -30,7 +30,7 @@ class StaticRouter {
 
     bool isARPPacketForRouter(const sr_arp_hdr_t* arpHeader);
 
-    void handleEchoRequest(sr_ip_hdr_t* ipHeader, sr_icmp_hdr_t* icmpHeader, const std::string& iface);
+    void handleEchoRequest(sr_ethernet_hdr_t* ethernetHeader, sr_ip_hdr_t* ipHeader, sr_icmp_hdr_t* icmpHeader, const std::string& iface);
 
     void sendPortUnreachable(sr_ip_hdr_t* ipHeader, const std::string& iface);
 
