@@ -266,7 +266,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
 // Checks if the given checksum is valid for the ip packet
 bool StaticRouter::isValidIPChecksum(const sr_ip_hdr_t* ipHeader) {
     // Save the original checksum
-    uint16_t originalChecksum = ntohs(ipHeader->ip_sum);
+    uint16_t originalChecksum = ipHeader->ip_sum;
 
     // Temporarily set the checksum field to 0
     sr_ip_hdr_t tempHeader = *ipHeader;
