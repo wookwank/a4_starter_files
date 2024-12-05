@@ -81,7 +81,7 @@ void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::stri
 
     // ARP request or response
     // Extract relevant information from the ARP request
-    uint32_t senderIP = ntohl(arpHeader->ar_sip);  // Sender IP in the ARP reply
+    uint32_t senderIP = arpHeader->ar_sip;  // Sender IP in the ARP reply
     mac_addr senderMAC;
     std::copy(arpHeader->ar_sha, arpHeader->ar_sha + ETHER_ADDR_LEN, senderMAC.begin());  // Sender MAC in the ARP reply
 
@@ -174,8 +174,8 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
         }
         else {
             // Extract the ICMP header
-            auto *ethernetHeader = const_cast<sr_ethernet_hdr_t*>(reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data()));
-            sr_icmp_hdr_t *icmpHeader = const_cast<sr_icmp_hdr_t*>(reinterpret_cast<const sr_icmp_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t) + (ipHeader->ip_hl * 4)));
+            auto* ethernetHeader = const_cast<sr_ethernet_hdr_t*>(reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data()));
+            sr_icmp_hdr_t* icmpHeader = const_cast<sr_icmp_hdr_t*>(reinterpret_cast<const sr_icmp_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t) + (ipHeader->ip_hl * 4)));
             if (icmpHeader->icmp_type == ICMP_TYPE_ECHO_REQUEST) {
                 // Send echo reply - ICMP type 0 (Echo Reply)
                 handleEchoRequest(ethernetHeader, const_cast<sr_ip_hdr_t*>(ipHeader), icmpHeader, iface);
@@ -252,7 +252,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
             else {
                 // Not in cache -> Queue the packet request
                 spdlog::info("MAC address not found in ARP cache. Queueing packet and sending ARP request.");
-                arpCache->queuePacket(targetIP, packet, route->iface);
+                arpCache->queuePacket(ntohl(targetIP), packet, route->iface);
             }
         }
         else {
@@ -314,11 +314,11 @@ bool StaticRouter::isARPPacketForRouter(const sr_arp_hdr_t* arpHeader) {
 
 // Function for sending an ICMP echo response
 // TODO: DOUBLE CHECK THIS
-void StaticRouter::handleEchoRequest(sr_ethernet_hdr_t *ethernetHeader, sr_ip_hdr_t *ipHeader, sr_icmp_hdr_t *icmpHeader, const std::string& iface) {
+void StaticRouter::handleEchoRequest(sr_ethernet_hdr_t* ethernetHeader, sr_ip_hdr_t* ipHeader, sr_icmp_hdr_t* icmpHeader, const std::string& iface) {
     // Log an Echo Request
     spdlog::info("Handling ICMP Echo Request.");
 
-    uint8_t replyPacket[1500]; // Maximum size for an Ethernet frame
+    uint8_t replyPacket[1500];  // Maximum size for an Ethernet frame
     memset(replyPacket, 0, sizeof(replyPacket));
 
     // Retrieve the source IP address and MAC address for the interface
@@ -327,46 +327,46 @@ void StaticRouter::handleEchoRequest(sr_ethernet_hdr_t *ethernetHeader, sr_ip_hd
     mac_addr srcMAC = ifaceInfo.mac;
 
     // Ethernet header for the reply
-    sr_ethernet_hdr_t *replyEthernetHeader = (sr_ethernet_hdr_t *)replyPacket;
-    memcpy(replyEthernetHeader->ether_shost, srcMAC.data(), ETHER_ADDR_LEN); // Set source MAC address (라우터 인터페이스의 MAC 주소)
-    memcpy(replyEthernetHeader->ether_dhost, ethernetHeader->ether_shost, ETHER_ADDR_LEN); // Set destination MAC address (요청 보낸 호스트의 MAC 주소)
-    replyEthernetHeader->ether_type = htons(ethertype_ip); // Set EtherType to IP (0x0800)
+    sr_ethernet_hdr_t* replyEthernetHeader = (sr_ethernet_hdr_t*)replyPacket;
+    memcpy(replyEthernetHeader->ether_shost, srcMAC.data(), ETHER_ADDR_LEN);                // Set source MAC address (라우터 인터페이스의 MAC 주소)
+    memcpy(replyEthernetHeader->ether_dhost, ethernetHeader->ether_shost, ETHER_ADDR_LEN);  // Set destination MAC address (요청 보낸 호스트의 MAC 주소)
+    replyEthernetHeader->ether_type = htons(ethertype_ip);                                  // Set EtherType to IP (0x0800)
 
     // IP header for the reply
-    sr_ip_hdr_t *replyIPHeader = (sr_ip_hdr_t *)(replyPacket + sizeof(sr_ethernet_hdr_t));
-    memcpy(replyIPHeader, ipHeader, sizeof(sr_ip_hdr_t)); // Copy original IP header
+    sr_ip_hdr_t* replyIPHeader = (sr_ip_hdr_t*)(replyPacket + sizeof(sr_ethernet_hdr_t));
+    memcpy(replyIPHeader, ipHeader, sizeof(sr_ip_hdr_t));  // Copy original IP header
 
     // Update the IP header fields
-    replyIPHeader->ip_src = ipHeader->ip_dst;                    // Set source IP to the router's interface IP
-    replyIPHeader->ip_dst = ipHeader->ip_src;         // Set destination IP to the original source IP
-    replyIPHeader->ip_ttl -= 1;                       // Decrement TTL by 1
-    replyIPHeader->ip_sum = 0;                        // Clear checksum for recomputation
-    replyIPHeader->ip_sum = cksum(replyIPHeader, sizeof(sr_ip_hdr_t)); // Recompute checksum
+    replyIPHeader->ip_src = ipHeader->ip_dst;                           // Set source IP to the router's interface IP
+    replyIPHeader->ip_dst = ipHeader->ip_src;                           // Set destination IP to the original source IP
+    replyIPHeader->ip_ttl -= 1;                                         // Decrement TTL by 1
+    replyIPHeader->ip_sum = 0;                                          // Clear checksum for recomputation
+    replyIPHeader->ip_sum = cksum(replyIPHeader, sizeof(sr_ip_hdr_t));  // Recompute checksum
 
     // ICMP header for the reply
-    sr_icmp_hdr_t *replyICMPHeader = (sr_icmp_hdr_t *)((uint8_t *)replyIPHeader + (replyIPHeader->ip_hl * 4));
-    memcpy(replyICMPHeader, icmpHeader, sizeof(sr_icmp_hdr_t)); // Copy original ICMP header
+    sr_icmp_hdr_t* replyICMPHeader = (sr_icmp_hdr_t*)((uint8_t*)replyIPHeader + (replyIPHeader->ip_hl * 4));
+    memcpy(replyICMPHeader, icmpHeader, sizeof(sr_icmp_hdr_t));  // Copy original ICMP header
 
     // Update ICMP header fields
-    replyICMPHeader->icmp_type = ICMP_TYPE_ECHO_REPLY; // Change type to Echo Reply (0)
-    replyICMPHeader->icmp_code = 0;                    // Code is always 0 for Echo Reply
-    replyICMPHeader->icmp_sum = 0;                     // Clear checksum for recomputation
+    replyICMPHeader->icmp_type = ICMP_TYPE_ECHO_REPLY;  // Change type to Echo Reply (0)
+    replyICMPHeader->icmp_code = 0;                     // Code is always 0 for Echo Reply
+    replyICMPHeader->icmp_sum = 0;                      // Clear checksum for recomputation
 
     // Copy the ICMP data from the original request to the reply
-    uint8_t *icmpData = (uint8_t *)(icmpHeader + 1);       // Pointer to data in the original request
-    uint8_t *replyData = (uint8_t *)(replyICMPHeader + 1); // Pointer to data in the reply packet
+    uint8_t* icmpData = (uint8_t*)(icmpHeader + 1);        // Pointer to data in the original request
+    uint8_t* replyData = (uint8_t*)(replyICMPHeader + 1);  // Pointer to data in the reply packet
     int icmpDataLength = ntohs(ipHeader->ip_len) - (ipHeader->ip_hl * 4) - sizeof(sr_icmp_hdr_t);
 
     if (icmpDataLength > 0) {
-        memcpy(replyData, icmpData, icmpDataLength); // Copy the data payload from the original request
+        memcpy(replyData, icmpData, icmpDataLength);  // Copy the data payload from the original request
     }
 
     // Compute the new ICMP checksum
-    int icmpLength = sizeof(sr_icmp_hdr_t) + icmpDataLength; // Calculate total ICMP length including data
-    replyICMPHeader->icmp_sum = cksum(replyICMPHeader, icmpLength); // Recompute ICMP checksum
+    int icmpLength = sizeof(sr_icmp_hdr_t) + icmpDataLength;         // Calculate total ICMP length including data
+    replyICMPHeader->icmp_sum = cksum(replyICMPHeader, icmpLength);  // Recompute ICMP checksum
 
     // Send the reply packet
-    int replyLength = sizeof(sr_ethernet_hdr_t) + ntohs(ipHeader->ip_len); // Total length includes Ethernet, IP, and ICMP
+    int replyLength = sizeof(sr_ethernet_hdr_t) + ntohs(ipHeader->ip_len);  // Total length includes Ethernet, IP, and ICMP
     std::vector<uint8_t> packetVector(replyPacket, replyPacket + replyLength);
     packetSender->sendPacket(packetVector, iface);
 }

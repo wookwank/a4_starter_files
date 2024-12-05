@@ -85,7 +85,7 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
                 memcpy(arp_hdr.ar_sha, source_mac.data(), ETHER_ADDR_LEN);  // Set sender's MAC address (your MAC address)
                 arp_hdr.ar_sip = source_ip;                                 // Set sender's IP address (your IP address, convert from string)
                 memset(arp_hdr.ar_tha, 0, ETHER_ADDR_LEN);                  // Set target's MAC address to zero (unknown)
-                arp_hdr.ar_tip = htonl(dest_ip);                            // Set target IP address (the IP you're looking for)
+                arp_hdr.ar_tip = dest_ip;                                   // Set target IP address (the IP you're looking for)
 
                 // 1. Serialize Ethernet Header
                 Packet packet;
