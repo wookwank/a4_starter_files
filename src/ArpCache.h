@@ -31,11 +31,12 @@ class ArpCache : public IArpCache {
 
     void queuePacket(uint32_t ip, const Packet& packet, const std::string& iface) override;
 
-   private:
-    void loop();
     void sendArpRequest(const uint32_t);
     void sendArpResponse(const uint32_t, const mac_addr);
     bool requestExists(uint32_t dest_ip);
+
+   private:
+    void loop();
 
     std::chrono::milliseconds timeout;
 

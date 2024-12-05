@@ -39,7 +39,6 @@ RoutingTable::RoutingTable(const std::filesystem::path& routingTablePath) {
     }
 }
 
-
 std::optional<RoutingEntry> RoutingTable::getRoutingEntry(ip_addr ip) {
     std::optional<RoutingEntry> bestMatch;
     int longestMatch = -1;  // Tracks the length of the longest match in bits
@@ -68,7 +67,6 @@ std::optional<RoutingEntry> RoutingTable::getRoutingEntry(ip_addr ip) {
 
     return bestMatch;
 }
-
 
 RoutingInterface RoutingTable::getRoutingInterface(const std::string& iface) {
     return routingInterfaces.at(iface);

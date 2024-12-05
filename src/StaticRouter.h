@@ -1,16 +1,15 @@
 #ifndef STATICROUTER_H
 #define STATICROUTER_H
-#include <vector>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 #include "IArpCache.h"
 #include "IPacketSender.h"
 #include "IRoutingTable.h"
 
-
 class StaticRouter {
-public:
+   public:
     StaticRouter(std::unique_ptr<IArpCache> arpCache, std::shared_ptr<IRoutingTable> routingTable,
                  std::shared_ptr<IPacketSender> packetSender);
 
@@ -25,13 +24,13 @@ public:
 
     void handleIP(const std::vector<uint8_t>& packet, const std::string& iface);
 
-    bool isValidIPChecksum(const sr_ip_hdr_t *ipHeader);
+    bool isValidIPChecksum(const sr_ip_hdr_t* ipHeader);
 
-    bool isFinalDestination(const sr_ip_hdr_t *ipHeader);
+    bool isFinalDestination(const sr_ip_hdr_t* ipHeader);
 
     bool isARPPacketForRouter(const sr_arp_hdr_t* arpHeader);
 
-    void handleEchoRequest(sr_ip_hdr_t *ipHeader, sr_icmp_hdr_t *icmpHeader, const std::string& iface);
+    void handleEchoRequest(sr_ip_hdr_t* ipHeader, sr_icmp_hdr_t* icmpHeader, const std::string& iface);
 
     void sendPortUnreachable(sr_ip_hdr_t* ipHeader, const std::string& iface);
 
@@ -39,9 +38,7 @@ public:
 
     void sendICMPTimeExceeded(const sr_ip_hdr_t* ipHeader, const std::string& iface);
 
-    
-
-private:
+   private:
     std::mutex mutex;
 
     std::shared_ptr<IRoutingTable> routingTable;
@@ -50,5 +47,4 @@ private:
     std::unique_ptr<IArpCache> arpCache;
 };
 
-
-#endif //STATICROUTER_H
+#endif  // STATICROUTER_H

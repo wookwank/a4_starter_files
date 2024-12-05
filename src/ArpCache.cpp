@@ -1,6 +1,6 @@
 #include "ArpCache.h"
 
-// #include <spdlog/spdlog.h>
+#include <spdlog/spdlog.h>
 
 #include <cstring>
 #include <iostream>
@@ -79,8 +79,8 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
                 memset(&arp_hdr, 0, sizeof(arp_hdr));
                 arp_hdr.ar_hrd = htons(arp_hrd_ethernet);                   // Set hardware type to Ethernet (1)
                 arp_hdr.ar_pro = htons(0x0800);                             // Set protocol type to IPv4 (0x0800)
-                arp_hdr.ar_hln = htons(6);                                  // Set hardware address length (6 for MAC)
-                arp_hdr.ar_pln = htons(4);                                  // Set protocol address length (4 for IPv4)
+                arp_hdr.ar_hln = 6;                                         // Set hardware address length (6 for MAC)
+                arp_hdr.ar_pln = 4;                                         // Set protocol address length (4 for IPv4)
                 arp_hdr.ar_op = htons(arp_op_request);                      // Set ARP operation to request (1)
                 memcpy(arp_hdr.ar_sha, source_mac.data(), ETHER_ADDR_LEN);  // Set sender's MAC address (your MAC address)
                 arp_hdr.ar_sip = htonl(source_ip);                          // Set sender's IP address (your IP address, convert from string)
@@ -148,8 +148,8 @@ void ArpCache::sendArpResponse(const uint32_t dest_ip, const mac_addr dest_mac) 
         memset(&arp_hdr, 0, sizeof(arp_hdr));
         arp_hdr.ar_hrd = htons(arp_hrd_ethernet);                   // Set hardware type to Ethernet (1)
         arp_hdr.ar_pro = htons(0x0800);                             // Set protocol type to IPv4 (0x0800)
-        arp_hdr.ar_hln = htons(6);                                  // Set hardware address length (6 for MAC)
-        arp_hdr.ar_pln = htons(4);                                  // Set protocol address length (4 for IPv4)
+        arp_hdr.ar_hln = 6;                                         // Set hardware address length (6 for MAC)
+        arp_hdr.ar_pln = 4;                                         // Set protocol address length (4 for IPv4)
         arp_hdr.ar_op = htons(arp_op_reply);                        // Set ARP operation to reply (2)
         memcpy(arp_hdr.ar_sha, source_mac.data(), ETHER_ADDR_LEN);  // Set sender's MAC address (your MAC address)
         arp_hdr.ar_sip = htonl(source_ip);                          // Set sender's IP address (your IP address, convert from string)

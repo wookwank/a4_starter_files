@@ -16,4 +16,4 @@ source .venv/bin/activate
 
 echo "Installing Python dependencies..."
 sleep 1
-pip install -r requirements.txt
+pip install --upgrade -r requirements.txt
