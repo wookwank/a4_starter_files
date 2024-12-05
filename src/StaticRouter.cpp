@@ -74,7 +74,7 @@ void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::stri
     const sr_arp_hdr_t* arpHeader = reinterpret_cast<const sr_arp_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t));
 
     // Check if the ARP packet is meant for this router
-    if (!isARPPacketForRouter(arpHeader)) {
+    if (!isARPPacketForRouter(arpHeader->ar_tip, iface)) {
         spdlog::info("Received ARP packet not intended for this router (Target IP: {}). Ignoring.", arpHeader->ar_tip);
         return;
     }
@@ -294,15 +294,10 @@ bool StaticRouter::isFinalDestination(const sr_ip_hdr_t* ipHeader) {
     return false;  // No match, the packet is not meant for this router
 }
 
-bool StaticRouter::isARPPacketForRouter(const sr_arp_hdr_t* arpHeader) {
-    // Retrieve the list of interfaces from the routing table
-    const auto interfaces = routingTable->getRoutingInterfaces();
-
-    // Check if the ARP target IP matches any of the router's interfaces
-    for (const auto& ifaceEntry : interfaces) {
-        if (arpHeader->ar_tip == ifaceEntry.second.ip) {
-            return true;  // The ARP packet is intended for this router
-        }
+bool StaticRouter::isARPPacketForRouter(const uint32_t target_ip, const std::string& iface) {
+    RoutingInterface interfaces = routingTable->getRoutingInterface(iface);
+    if (interfaces.ip == target_ip) {
+        return true;  // ARP packet is for this router
     }
 
     return false;  // No match found; the ARP packet is not for this router
