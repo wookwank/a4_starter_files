@@ -32,7 +32,7 @@ class ArpCache : public IArpCache {
     void queuePacket(uint32_t ip, const Packet& packet, const std::string& iface) override;
 
     void sendArpRequest(const uint32_t);
-    void sendArpResponse(const uint32_t, const mac_addr);
+    void sendArpResponse(const uint32_t, const mac_addr, const std::string&);
     bool requestExists(uint32_t dest_ip);
 
    private:

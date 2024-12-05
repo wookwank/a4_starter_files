@@ -123,15 +123,12 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
  * @param dest_ip The destination IP address for the ARP reply.
  * @param dest_mac The destination MAC address to which the ARP reply will be sent.
  */
-void ArpCache::sendArpResponse(const uint32_t dest_ip, const mac_addr dest_mac) {
+void ArpCache::sendArpResponse(const uint32_t dest_ip, const mac_addr dest_mac, const std::string& source_iface) {
     // Resend the ARP request and update the metadata
-    auto routingEntryOpt = routingTable->getRoutingEntry(dest_ip);
+    auto dest_routingEntryOpt = routingTable->getRoutingEntry(dest_ip);
 
-    if (routingEntryOpt) {
+    if (dest_routingEntryOpt) {
         // If a valid routing entry is found, use its interface to send the ARP request
-        const RoutingEntry& routingEntry = routingEntryOpt.value();
-        std::string source_iface = routingEntry.iface;
-
         RoutingInterface interface = routingTable->getRoutingInterface(source_iface);
         ip_addr source_ip = interface.ip;
         mac_addr source_mac = interface.mac;
