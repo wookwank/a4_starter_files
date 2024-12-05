@@ -90,7 +90,7 @@ void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::stri
         // This request is for one of the router's IP addresses
         auto* concreteArpCache = dynamic_cast<ArpCache*>(arpCache.get());
         if (concreteArpCache) {
-            concreteArpCache->sendArpResponse(senderIP, senderMAC);
+            concreteArpCache->sendArpResponse(senderIP, senderMAC, iface);
         }
         else {
             spdlog::error("Failed to cast arpCache to ArpCache.");

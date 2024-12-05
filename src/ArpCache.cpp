@@ -83,7 +83,7 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
                 arp_hdr.ar_pln = 4;                                         // Set protocol address length (4 for IPv4)
                 arp_hdr.ar_op = htons(arp_op_request);                      // Set ARP operation to request (1)
                 memcpy(arp_hdr.ar_sha, source_mac.data(), ETHER_ADDR_LEN);  // Set sender's MAC address (your MAC address)
-                arp_hdr.ar_sip = htonl(source_ip);                          // Set sender's IP address (your IP address, convert from string)
+                arp_hdr.ar_sip = source_ip;                                 // Set sender's IP address (your IP address, convert from string)
                 memset(arp_hdr.ar_tha, 0, ETHER_ADDR_LEN);                  // Set target's MAC address to zero (unknown)
                 arp_hdr.ar_tip = htonl(dest_ip);                            // Set target IP address (the IP you're looking for)
 
@@ -149,7 +149,7 @@ void ArpCache::sendArpResponse(const uint32_t dest_ip, const mac_addr dest_mac, 
         arp_hdr.ar_pln = 4;                                         // Set protocol address length (4 for IPv4)
         arp_hdr.ar_op = htons(arp_op_reply);                        // Set ARP operation to reply (2)
         memcpy(arp_hdr.ar_sha, source_mac.data(), ETHER_ADDR_LEN);  // Set sender's MAC address (your MAC address)
-        arp_hdr.ar_sip = htonl(source_ip);                          // Set sender's IP address (your IP address, convert from string)
+        arp_hdr.ar_sip = source_ip;                                 // Set sender's IP address (your IP address, convert from string)
         memcpy(arp_hdr.ar_tha, dest_mac.data(), ETHER_ADDR_LEN);    // Set target's MAC address to zero (unknown)
         arp_hdr.ar_tip = htonl(dest_ip);                            // Set target IP address (the IP you're looking for)
 
