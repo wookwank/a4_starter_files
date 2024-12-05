@@ -40,8 +40,6 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface) 
         return;
     }
 
-    // TODO: Your code below
-
     // Extract the Ethernet header from the packet
     const sr_ethernet_hdr_t* ethHeader = reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data());
 
@@ -66,10 +64,6 @@ void StaticRouter::handlePacket(std::vector<uint8_t> packet, std::string iface) 
 
 void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::string& iface) {
     spdlog::info("Handling ARP packet on interface {}.", iface);
-    // TODO: Add ARP handling logic
-
-    // Parse ARP packet
-    // sr_arp_hdr_t* arpHeader = reinterpret_cast<sr_arp_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t));
 
     const sr_arp_hdr_t* arpHeader = reinterpret_cast<const sr_arp_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t));
 
@@ -81,7 +75,7 @@ void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::stri
 
     // ARP request or response
     // Extract relevant information from the ARP request
-    uint32_t senderIP = arpHeader->ar_sip;  // Sender IP in the ARP reply
+    uint32_t senderIP = ntohl(arpHeader->ar_sip);  // Sender IP in the ARP reply
     mac_addr senderMAC;
     std::copy(arpHeader->ar_sha, arpHeader->ar_sha + ETHER_ADDR_LEN, senderMAC.begin());  // Sender MAC in the ARP reply
 
@@ -221,7 +215,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
             // If it's cached, forward the packet, if not send an ARP request
 
             // IP address of the next hop
-            uint32_t targetIP = route->gateway;
+            uint32_t targetIP = ntohl(route->gateway);
 
             // Check if it's in ARP Cache
             auto arpEntry = arpCache->getEntry(targetIP);
