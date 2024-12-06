@@ -254,7 +254,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
             // Send ICMP message type 3 code 0
             spdlog::error("No routing entry found for destination IP {}. Dropping packet.", destIP);
             auto* originalEthHeader = reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data());
-            sendICMPDestinationUnreachable(ipHeader, iface);
+            sendICMPDestinationUnreachable(ipHeader, originalEthHeader, iface);
             return;
         }
     }
