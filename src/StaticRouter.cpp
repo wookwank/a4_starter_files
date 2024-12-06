@@ -266,8 +266,8 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
         else {
             // Send ICMP message type 3 code 0
             spdlog::error("No routing entry found for destination IP {}. Dropping packet.", destIP);
-            auto* originalEthHeader = reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data());
-            sendICMPDestinationUnreachable(ipHeader, originalEthHeader, iface);
+            auto* ethHeader = reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data());
+            sendICMPDestinationUnreachable(ipHeader, ethHeader, iface);
             return;
         }
     }
@@ -420,7 +420,7 @@ void StaticRouter::sendPortUnreachable(sr_ethernet_hdr_t* ethernetHeader, sr_ip_
     spdlog::info("ICMP Port Unreachable message sent.");
 }
 
-void StaticRouter::sendICMPDestinationUnreachable(const sr_ip_hdr_t* ipHeader, const sr_ethernet_hdr_t* originalEthHeader, const std::string& iface) {
+void StaticRouter::sendICMPDestinationUnreachable(const sr_ip_hdr_t* ipHeader, const sr_ethernet_hdr_t* EthHeader, const std::string& iface) {
     spdlog::info("Sending ICMP Destination Net Unreachable (Type: {}, Code: {}) on interface {}.", ICMP_TYPE_DEST_UNREACHABLE, ICMP_CODE_NET_UNREACHABLE, iface);
 
     // Allocate space for Ethernet, IP, and ICMP headers
@@ -433,7 +433,7 @@ void StaticRouter::sendICMPDestinationUnreachable(const sr_ip_hdr_t* ipHeader, c
     // Set source MAC address
     std::memcpy(ethHeader->ether_shost, ifaceInfo.mac.data(), ETHER_ADDR_LEN);
     // Set destination MAC address using the original Ethernet header's source MAC address
-    std::memcpy(ethHeader->ether_dhost, originalEthHeader->ether_shost, ETHER_ADDR_LEN);
+    std::memcpy(ethHeader->ether_dhost, EthHeader->ether_shost, ETHER_ADDR_LEN);
 
     ethHeader->ether_type = htons(ethertype_ip);
 
@@ -466,7 +466,7 @@ void StaticRouter::sendICMPDestinationUnreachable(const sr_ip_hdr_t* ipHeader, c
     spdlog::info("ICMP Destination Net Unreachable message sent.");
 }
 
-void StaticRouter::sendICMPTimeExceeded(const sr_ip_hdr_t* ipHeader, const sr_ethernet_hdr_t* originalEthHeader, const std::string& iface) {
+void StaticRouter::sendICMPTimeExceeded(const sr_ip_hdr_t* ipHeader, const sr_ethernet_hdr_t* EthHeader, const std::string& iface) {
     spdlog::info("Sending ICMP Time Exceeded (Type: {}, Code: {}) on interface {}.", ICMP_TYPE_TIME_EXCEEDED, ICMP_CODE_TTL_EXPIRED, iface);
 
     // Allocate space for Ethernet, IP, and ICMP headers
@@ -477,7 +477,7 @@ void StaticRouter::sendICMPTimeExceeded(const sr_ip_hdr_t* ipHeader, const sr_et
     auto* ethHeader = reinterpret_cast<sr_ethernet_hdr_t*>(responsePacket.data());
     auto ifaceInfo = routingTable->getRoutingInterface(iface);
     std::memcpy(ethHeader->ether_shost, ifaceInfo.mac.data(), ETHER_ADDR_LEN);
-    std::memcpy(ethHeader->ether_dhost, originalEthHeader->ether_shost, ETHER_ADDR_LEN);
+    std::memcpy(ethHeader->ether_dhost, EthHeader->ether_shost, ETHER_ADDR_LEN);
     ethHeader->ether_type = htons(ethertype_ip);
 
     // Fill IP header
