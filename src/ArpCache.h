@@ -33,6 +33,8 @@ class ArpCache : public IArpCache {
 
     void sendArpRequest(const uint32_t);
     void sendArpResponse(const uint32_t, const mac_addr, const std::string&);
+    void sendICMPHostUnreachable(const sr_ip_hdr_t* ipHeader, const sr_ethernet_hdr_t* originalEthHeader, const std::string& iface);
+    void handleFailedArpRequest(ArpRequest& arpRequest);
     bool requestExists(uint32_t dest_ip);
 
    private:

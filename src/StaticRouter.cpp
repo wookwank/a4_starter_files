@@ -124,6 +124,7 @@ void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::stri
 
 void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::string& iface) {
     spdlog::info("Handling IP packet on interface {}.", iface);
+    print_hdrs((uint8_t*)packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_hdr));
 
     // Check if the packet is too small to contain an IP header
     // TODO: Not sure if we need this!!!
@@ -399,7 +400,7 @@ void StaticRouter::sendPortUnreachable(sr_ethernet_hdr_t* ethernetHeader, sr_ip_
     replyIPHeader->ip_off = htons(IP_DF);
     replyIPHeader->ip_ttl = 64;
     replyIPHeader->ip_p = ip_protocol_icmp;
-    replyIPHeader->ip_src = ifaceInfo.ip;
+    replyIPHeader->ip_src = ipHeader->ip_dst;
     replyIPHeader->ip_dst = ipHeader->ip_src;
     replyIPHeader->ip_sum = 0;
     replyIPHeader->ip_sum = cksum(replyIPHeader, sizeof(sr_ip_hdr_t));
