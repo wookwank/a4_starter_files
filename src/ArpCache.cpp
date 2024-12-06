@@ -151,7 +151,7 @@ void ArpCache::sendArpResponse(const uint32_t dest_ip, const mac_addr dest_mac, 
         memcpy(arp_hdr.ar_sha, source_mac.data(), ETHER_ADDR_LEN);  // Set sender's MAC address (your MAC address)
         arp_hdr.ar_sip = source_ip;                                 // Set sender's IP address (your IP address, convert from string)
         memcpy(arp_hdr.ar_tha, dest_mac.data(), ETHER_ADDR_LEN);    // Set target's MAC address to zero (unknown)
-        arp_hdr.ar_tip = htonl(dest_ip);                            // Set target IP address (the IP you're looking for)
+        arp_hdr.ar_tip = dest_ip;                                   // Set target IP address (the IP you're looking for)
 
         // 1. Serialize Ethernet Header
         Packet packet;
@@ -206,6 +206,15 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
 
         // If there are pending requests, resend the awaiting packets
         for (const auto& awaitingPacket : it->second.awaitingPackets) {
+            // Get Source mac
+            auto source_mac = routingTable->getRoutingInterface(awaitingPacket.iface).mac;
+
+            // Remove constness to modify the Ethernet header
+            auto* ethHeader = const_cast<sr_ethernet_hdr_t*>(
+                reinterpret_cast<const sr_ethernet_hdr_t*>(awaitingPacket.packet.data()));
+            std::memcpy(ethHeader->ether_shost, source_mac.data(), ETHER_ADDR_LEN);  // Set source MAC address
+            std::memcpy(ethHeader->ether_dhost, mac.data(), ETHER_ADDR_LEN);         // Set dest MAC address
+
             packetSender->sendPacket(awaitingPacket.packet, awaitingPacket.iface);
         }
 
