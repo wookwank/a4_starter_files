@@ -49,6 +49,8 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
         ArpRequest& request = it->second;
 
         if (request.timesSent >= 7) {
+            handleFailedArpRequest(request);
+
             // Drop the request if failed 7 times without a response
 
             handleFailedArpRequest(request);
@@ -313,10 +315,10 @@ void ArpCache::sendICMPHostUnreachable(const sr_ip_hdr_t* ipHeader, const sr_eth
 
     // Fill ICMP header
     auto* icmpHeader = reinterpret_cast<sr_icmp_t3_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
-    icmpHeader->icmp_type = 3;         // Type 3, Destination Unreachable
-    icmpHeader->icmp_code = 1;         // Code 1, Host Unreachable
-    icmpHeader->icmp_sum = 0;                                  // Zero out for checksum calculation
-    std::memcpy(icmpHeader->data, ipHeader, ICMP_DATA_SIZE);   // Copy original IP header and first 8 bytes of payload
+    icmpHeader->icmp_type = 3;                                // Type 3, Destination Unreachable
+    icmpHeader->icmp_code = 1;                                // Code 1, Host Unreachable
+    icmpHeader->icmp_sum = 0;                                 // Zero out for checksum calculation
+    std::memcpy(icmpHeader->data, ipHeader, ICMP_DATA_SIZE);  // Copy original IP header and first 8 bytes of payload
     icmpHeader->icmp_sum = cksum(icmpHeader, sizeof(sr_icmp_t3_hdr_t));
 
     // Send the packet using the packet sender
@@ -324,9 +326,8 @@ void ArpCache::sendICMPHostUnreachable(const sr_ip_hdr_t* ipHeader, const sr_eth
     spdlog::info("ICMP Destination Host Unreachable message sent.");
 }
 
-
 void ArpCache::handleFailedArpRequest(ArpRequest& arpRequest) {
-    spdlog::warn("ARP request for IP {} failed after {} attempts. Sending ICMP Host Unreachable messages.", 
+    spdlog::warn("ARP request for IP {} failed after {} attempts. Sending ICMP Host Unreachable messages.",
                  ntohl(arpRequest.ip), arpRequest.timesSent);
 
     for (const auto& awaitingPacket : arpRequest.awaitingPackets) {
