@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/dannykim/Desktop/UMich/Fall 2024/EECS 489/a4_starter_files/py/.venv"
+set -gx VIRTUAL_ENV "/home/ubuntu/a4_starter_files/py/.venv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH
