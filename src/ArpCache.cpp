@@ -49,12 +49,11 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
         ArpRequest& request = it->second;
 
         if (request.timesSent >= 7) {
+            // send ICMP dest host unreachable
             handleFailedArpRequest(request);
 
             // Drop the request if failed 7 times without a response
             requests.erase(it);
-
-            // TODO: send ICMP dest host unreachable
         }
         else {
             // Resend the ARP request and update the metadata
@@ -103,6 +102,8 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
 
                 // Proceed to resend the ARP request
                 packetSender->sendPacket(packet, iface);  // TODO: Need to check this iface
+
+                spdlog::info("ARP request send to dest_ip {}", dest_ip);
 
                 // Update the request's metadata
                 request.lastSent = std::chrono::steady_clock::now();
@@ -190,6 +191,7 @@ void ArpCache::tick() {
         auto durationSinceLastSent = std::chrono::steady_clock::now() - request.lastSent;
         if (durationSinceLastSent >= timeout) {
             // Resend the ARP request
+            spdlog::info("Ticking to send ARP request to dest_ip {}", dest_ip);
             sendArpRequest(dest_ip);
         }
     }
@@ -217,22 +219,24 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
         // If there are pending requests, resend the awaiting packets
         for (const auto& awaitingPacket : it->second.awaitingPackets) {
             // Get Source mac
-            // iface now changed, need to change how to get the new iface
             std::string dest_iface = routingTable->getRoutingEntry(ip)->iface;
-            // auto source_mac = routingTable->getRoutingInterface(awaitingPacket.iface).mac;
             auto source_mac = routingTable->getRoutingInterface(dest_iface).mac;
 
-            // Remove constness to modify the Ethernet header
+            // Modify the Ethernet header
             auto* ethHeader = const_cast<sr_ethernet_hdr_t*>(
                 reinterpret_cast<const sr_ethernet_hdr_t*>(awaitingPacket.packet.data()));
             std::memcpy(ethHeader->ether_shost, source_mac.data(), ETHER_ADDR_LEN);  // Set source MAC address
             std::memcpy(ethHeader->ether_dhost, mac.data(), ETHER_ADDR_LEN);         // Set dest MAC address
 
-            // spdlog::info("Resending queued packets to interface {}", awaitingPacket.iface);
-            spdlog::info("Resending queued packets to interface {}", dest_iface);
+            // Update IP Header
+            auto* ipHeader = const_cast<sr_ip_hdr_t*>(reinterpret_cast<const sr_ip_hdr_t*>(awaitingPacket.packet.data() + sizeof(sr_ethernet_hdr_t)));
+            ipHeader->ip_ttl--;                                     // Decrement TTL by 1;
+            ipHeader->ip_sum = 0;                                   // Reset checksum before recalculating
+            ipHeader->ip_sum = cksum(ipHeader, sizeof(sr_ip_hdr));  // Recompute the checksum
+
             // Debug: Print queued packet
+            spdlog::info("Resending queued packets to interface {}", dest_iface);
             print_hdrs((uint8_t*)awaitingPacket.packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_hdr));
-            // packetSender->sendPacket(awaitingPacket.packet, awaitingPacket.iface);
             packetSender->sendPacket(awaitingPacket.packet, dest_iface);
         }
 
@@ -260,6 +264,7 @@ std::optional<mac_addr> ArpCache::getEntry(uint32_t dest_ip) {
 
 void ArpCache::queuePacket(uint32_t dest_ip, const Packet& packet, const std::string& src_iface) {
     spdlog::info("Queuing packet for dest_ip {}.", dest_ip);
+
     // DO NOT CHANGE THIS
     std::unique_lock lock(mutex);
 

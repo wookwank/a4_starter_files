@@ -191,8 +191,8 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
         }
     }
     else {
-        spdlog::info("This iface is not the final destination");
         // Handle TTL
+        spdlog::info("This iface is not the final destination");
         // If TTL == 0 drop
         // If TTL == 1 send ICMP type 11 code 0
         // If TTL > 1 keep progressing
@@ -201,23 +201,13 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
             spdlog::error("Packet has TTL = 0. Dropping packet.");
             return;
         }
-
-        // Decrement TTL by 1;
-        auto* mutableIpHeader = const_cast<sr_ip_hdr_t*>(ipHeader);
-        mutableIpHeader->ip_ttl--;
-
-        // Check again if it becomes 0
-        if (ipHeader->ip_ttl == 0) {
+        else if (ipHeader->ip_ttl == 1) {
             // Send ICMP message type 11 code 0
             spdlog::info("Sending Time Exceeded");
             const auto* ethernetHeader = reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data());
             sendICMPTimeExceeded(ipHeader, ethernetHeader, iface);
+            return;
         }
-
-        // TTL is still greater than 0
-        // TODO: Might not need these if we don't need to forward it
-        mutableIpHeader->ip_sum = 0;                                          // Reset checksum before recalculating
-        mutableIpHeader->ip_sum = cksum(mutableIpHeader, sizeof(sr_ip_hdr));  // Recompute the checksum
 
         // Look up the destination in the routing table
         auto route = routingTable->getRoutingEntry(destIP);
@@ -233,7 +223,10 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
             auto arpEntry = arpCache->getEntry(targetIP);
 
             if (arpEntry) {
-                // TODO: MAYBE PUT THIS INTO A FORWARD PACKET FUNCTION
+                auto* mutableIpHeader = const_cast<sr_ip_hdr_t*>(ipHeader);
+                mutableIpHeader->ip_ttl--;                                            // Decrement TTL by 1;
+                mutableIpHeader->ip_sum = 0;                                          // Reset checksum before recalculating
+                mutableIpHeader->ip_sum = cksum(mutableIpHeader, sizeof(sr_ip_hdr));  // Recompute the checksum
 
                 // In cache -> Forward it
                 mac_addr nextHopMAC = *arpEntry;
