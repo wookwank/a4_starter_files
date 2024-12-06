@@ -216,11 +216,10 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
 
         // If there are pending requests, resend the awaiting packets
         for (const auto& awaitingPacket : it->second.awaitingPackets) {
-
             // Get Source mac
             // iface now changed, need to change how to get the new iface
-            std::string dest_iface = routingTable->getRoutingEntry(ip).iface;
-            //auto source_mac = routingTable->getRoutingInterface(awaitingPacket.iface).mac;
+            std::string dest_iface = routingTable->getRoutingEntry(ip)->iface;
+            // auto source_mac = routingTable->getRoutingInterface(awaitingPacket.iface).mac;
             auto source_mac = routingTable->getRoutingInterface(dest_iface).mac;
 
             // Remove constness to modify the Ethernet header
@@ -336,6 +335,7 @@ void ArpCache::sendICMPHostUnreachable(const sr_ip_hdr_t* ipHeader, const sr_eth
     icmpHeader->icmp_sum = cksum(icmpHeader, sizeof(sr_icmp_t3_hdr_t));
 
     // Send the packet using the packet sender
+    print_hdrs((uint8_t*)packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_t3_hdr));
     packetSender->sendPacket(packet, iface);
     spdlog::info("ICMP Destination Host Unreachable message sent.");
 }
