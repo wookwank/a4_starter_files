@@ -243,7 +243,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
                 ethHeader->ether_type = htons(ethertype_ip);                                // Indicating IP payload
 
                 // Copy the IP header and payload into the Ethernet frame
-                std::memcpy(ethernetFrame.data() + sizeof(sr_ethernet_hdr_t), ipHeader, sizeof(sr_ip_hdr_t) + ntohs(ipHeader->ip_len));
+                std::memcpy(ethernetFrame.data() + sizeof(sr_ethernet_hdr_t), ipHeader, ntohs(ipHeader->ip_len));
 
                 // 5. Send the packet through the correct interface
                 spdlog::info("MAC address found in ARP cache. Sending Packet right away");
