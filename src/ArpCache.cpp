@@ -216,8 +216,12 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
 
         // If there are pending requests, resend the awaiting packets
         for (const auto& awaitingPacket : it->second.awaitingPackets) {
+
             // Get Source mac
-            auto source_mac = routingTable->getRoutingInterface(awaitingPacket.iface).mac;
+            // iface now changed, need to change how to get the new iface
+            std::string dest_iface = routingTable->getRoutingEntry(ip).iface;
+            //auto source_mac = routingTable->getRoutingInterface(awaitingPacket.iface).mac;
+            auto source_mac = routingTable->getRoutingInterface(dest_iface).mac;
 
             // Remove constness to modify the Ethernet header
             auto* ethHeader = const_cast<sr_ethernet_hdr_t*>(
@@ -225,10 +229,12 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
             std::memcpy(ethHeader->ether_shost, source_mac.data(), ETHER_ADDR_LEN);  // Set source MAC address
             std::memcpy(ethHeader->ether_dhost, mac.data(), ETHER_ADDR_LEN);         // Set dest MAC address
 
-            spdlog::info("Resending queued packets to interface {}", awaitingPacket.iface);
+            // spdlog::info("Resending queued packets to interface {}", awaitingPacket.iface);
+            spdlog::info("Resending queued packets to interface {}", dest_iface);
             // Debug: Print queued packet
             print_hdrs((uint8_t*)awaitingPacket.packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_hdr));
-            packetSender->sendPacket(awaitingPacket.packet, awaitingPacket.iface);
+            // packetSender->sendPacket(awaitingPacket.packet, awaitingPacket.iface);
+            packetSender->sendPacket(awaitingPacket.packet, dest_iface);
         }
 
         // After processing the awaiting packets, remove the request from the requests map
@@ -253,7 +259,7 @@ std::optional<mac_addr> ArpCache::getEntry(uint32_t dest_ip) {
     return std::nullopt;  // Return nullopt if not found
 }
 
-void ArpCache::queuePacket(uint32_t dest_ip, const Packet& packet, const std::string& dest_iface) {
+void ArpCache::queuePacket(uint32_t dest_ip, const Packet& packet, const std::string& src_iface) {
     spdlog::info("Queuing packet for dest_ip {}.", dest_ip);
     // DO NOT CHANGE THIS
     std::unique_lock lock(mutex);
@@ -263,13 +269,13 @@ void ArpCache::queuePacket(uint32_t dest_ip, const Packet& packet, const std::st
     if (it != requests.end()) {
         // If an ARP request already exists, add the packet to the awaitingPackets list
         spdlog::info("ARP request already exists. Pushing back");
-        it->second.awaitingPackets.push_back({packet, dest_iface});
+        it->second.awaitingPackets.push_back({packet, src_iface});
     }
     else {
         // If no ARP request exists for this IP, create a new one
         ArpRequest newRequest;
         newRequest.ip = dest_ip;
-        newRequest.awaitingPackets.push_back({packet, dest_iface});
+        newRequest.awaitingPackets.push_back({packet, src_iface});
         newRequest.timesSent = 0;
 
         // Add the new request to the requests map

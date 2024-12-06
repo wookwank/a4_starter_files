@@ -259,7 +259,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
             else {
                 // Not in cache -> Queue the packet request
                 spdlog::info("MAC address not found in ARP cache. Queueing packet and sending ARP request.");
-                arpCache->queuePacket(targetIP, packet, route->iface);
+                arpCache->queuePacket(targetIP, packet, iface);
             }
         }
         else {
