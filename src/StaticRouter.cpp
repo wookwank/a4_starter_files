@@ -252,6 +252,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
 
                 // 5. Send the packet through the correct interface
                 spdlog::info("MAC address found in ARP cache. Sending Packet right away");
+                print_hdrs((uint8_t*)ethernetFrame.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_hdr));
                 packetSender->sendPacket(ethernetFrame, route->iface);
             }
             else {
@@ -369,7 +370,9 @@ void StaticRouter::handleEchoRequest(sr_ethernet_hdr_t* ethernetHeader, sr_ip_hd
     // Send the reply packet
     int replyLength = sizeof(sr_ethernet_hdr_t) + ntohs(ipHeader->ip_len);  // Total length includes Ethernet, IP, and ICMP
     std::vector<uint8_t> packetVector(replyPacket, replyPacket + replyLength);
+    print_hdrs((uint8_t*)packetVector.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_hdr));
     packetSender->sendPacket(packetVector, iface);
+    spdlog::info("ICMP Echo message sent.");
 }
 
 void StaticRouter::sendPortUnreachable(sr_ethernet_hdr_t* ethernetHeader, sr_ip_hdr_t* ipHeader, const std::string& iface) {
@@ -410,6 +413,7 @@ void StaticRouter::sendPortUnreachable(sr_ethernet_hdr_t* ethernetHeader, sr_ip_
     replyICMPHeader->icmp_sum = cksum(replyICMPHeader, sizeof(sr_icmp_t3_hdr_t));
 
     // Send the packet
+    print_hdrs((uint8_t*)packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_t3_hdr));
     packetSender->sendPacket(packet, iface);
     spdlog::info("ICMP Port Unreachable message sent.");
 }
@@ -455,6 +459,7 @@ void StaticRouter::sendICMPDestinationUnreachable(const sr_ip_hdr_t* ipHeader, c
     icmpHeader->icmp_sum = cksum(icmpHeader, sizeof(sr_icmp_t3_hdr_t));
 
     // Send the packet using the packet sender
+    print_hdrs((uint8_t*)packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_t3_hdr));
     packetSender->sendPacket(packet, iface);
     spdlog::info("ICMP Destination Net Unreachable message sent.");
 }
@@ -497,6 +502,7 @@ void StaticRouter::sendICMPTimeExceeded(const sr_ip_hdr_t* ipHeader, const std::
     icmpHeader->icmp_sum = cksum(icmpHeader, sizeof(sr_icmp_t3_hdr_t));
 
     // Send the packet using the packet sender
+    print_hdrs((uint8_t*)responsePacket.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_hdr));
     packetSender->sendPacket(responsePacket, iface);
     spdlog::info("ICMP Time Exceeded message sent.");
 }

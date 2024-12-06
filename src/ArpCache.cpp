@@ -225,7 +225,7 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
 
             spdlog::info("Resending queued packets to interface {}", awaitingPacket.iface);
             // Debug: Print queued packet
-            print_hdrs((uint8_t*)awaitingPacket.packet.data(), sizeof(awaitingPacket.packet));
+            print_hdrs((uint8_t*)awaitingPacket.packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_hdr));
             packetSender->sendPacket(awaitingPacket.packet, awaitingPacket.iface);
         }
 
