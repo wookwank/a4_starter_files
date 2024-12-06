@@ -185,15 +185,11 @@ void ArpCache::tick() {
     // DO NOT CHANGE THIS
     std::unique_lock lock(mutex);
 
-    // Loop through the requests and resend timed-out requests
+    // Loop through the requests and resend not-replied requests
     for (auto& [dest_ip, request] : requests) {
-        // Check if the timeout has been reached for the request
-        auto durationSinceLastSent = std::chrono::steady_clock::now() - request.lastSent;
-        if (durationSinceLastSent >= timeout) {
-            // Resend the ARP request
-            spdlog::info("Ticking to send ARP request to dest_ip {}", dest_ip);
-            sendArpRequest(dest_ip);
-        }
+        // Resend the ARP request
+        spdlog::info("Ticking to send ARP request to dest_ip {}", dest_ip);
+        sendArpRequest(dest_ip);
     }
 
     // DO NOT CHANGE THIS
