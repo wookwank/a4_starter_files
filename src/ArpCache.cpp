@@ -209,6 +209,18 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
 
         // If there are pending requests, resend the awaiting packets
         for (const auto& awaitingPacket : it->second.awaitingPackets) {
+            // Get Source mac
+            auto source_mac = routingTable->getRoutingInterface(awaitingPacket.iface).mac;
+
+            // Remove constness to modify the Ethernet header
+            auto* ethHeader = const_cast<sr_ethernet_hdr_t*>(
+                reinterpret_cast<const sr_ethernet_hdr_t*>(awaitingPacket.packet.data()));
+            std::memcpy(ethHeader->ether_shost, source_mac.data(), ETHER_ADDR_LEN);  // Set source MAC address
+            std::memcpy(ethHeader->ether_dhost, mac.data(), ETHER_ADDR_LEN);         // Set dest MAC address
+
+            spdlog::info("Resending queued packets to interface {}", awaitingPacket.iface);
+            // Debug: Print queued packet
+            print_hdrs((uint8_t*)awaitingPacket.packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_hdr));
             packetSender->sendPacket(awaitingPacket.packet, awaitingPacket.iface);
         }
 
