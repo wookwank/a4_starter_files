@@ -32,9 +32,9 @@ class StaticRouter {
 
     void handleEchoRequest(sr_ethernet_hdr_t* ethernetHeader, sr_ip_hdr_t* ipHeader, sr_icmp_hdr_t* icmpHeader, const std::string& iface);
 
-    void sendPortUnreachable(sr_ip_hdr_t* ipHeader, const std::string& iface);
+    void sendPortUnreachable(sr_ethernet_hdr_t* ethernetHeader, sr_ip_hdr_t* ipHeader, const std::string& iface);
 
-    void sendICMPDestinationUnreachable(const sr_ip_hdr_t* ipHeader, const std::string& iface);
+    void sendICMPDestinationUnreachable(const sr_ip_hdr_t* ipHeader, const sr_ethernet_hdr_t* originalEthHeader, const std::string& iface);
 
     void sendICMPTimeExceeded(const sr_ip_hdr_t* ipHeader, const std::string& iface);
 

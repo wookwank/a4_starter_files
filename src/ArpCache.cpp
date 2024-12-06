@@ -64,7 +64,7 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
                 std::string iface = routingEntry.iface;
 
                 RoutingInterface interface = routingTable->getRoutingInterface(iface);
-                ip_addr source_ip = ntohl(interface.ip);
+                ip_addr source_ip = interface.ip;
                 mac_addr source_mac = interface.mac;
 
                 // Ethernet header
@@ -83,9 +83,9 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
                 arp_hdr.ar_pln = 4;                                         // Set protocol address length (4 for IPv4)
                 arp_hdr.ar_op = htons(arp_op_request);                      // Set ARP operation to request (1)
                 memcpy(arp_hdr.ar_sha, source_mac.data(), ETHER_ADDR_LEN);  // Set sender's MAC address (your MAC address)
-                arp_hdr.ar_sip = htonl(source_ip);                          // Set sender's IP address (your IP address, convert from string)
+                arp_hdr.ar_sip = source_ip;                                 // Set sender's IP address (your IP address, convert from string)
                 memset(arp_hdr.ar_tha, 0, ETHER_ADDR_LEN);                  // Set target's MAC address to zero (unknown)
-                arp_hdr.ar_tip = htonl(dest_ip);                            // Set target IP address (the IP you're looking for)
+                arp_hdr.ar_tip = dest_ip;                                   // Set target IP address (the IP you're looking for)
 
                 // 1. Serialize Ethernet Header
                 Packet packet;
@@ -95,6 +95,9 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
                 // 2. Serialize ARP Header
                 packet.resize(packet.size() + sizeof(arp_hdr));                             // Resize the vector to accommodate the ARP header
                 std::memcpy(packet.data() + sizeof(ether_hdr), &arp_hdr, sizeof(arp_hdr));  // Copy ARP header after Ethernet header
+
+                // Debug: Print ARP response
+                print_hdrs((uint8_t*)packet.data(), sizeof(ether_hdr) + sizeof(arp_hdr));
 
                 // Proceed to resend the ARP request
                 packetSender->sendPacket(packet, iface);  // TODO: Need to check this iface
@@ -124,13 +127,14 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
  * @param dest_mac The destination MAC address to which the ARP reply will be sent.
  */
 void ArpCache::sendArpResponse(const uint32_t dest_ip, const mac_addr dest_mac, const std::string& source_iface) {
+    spdlog::info("Sending ARP response on interface {} to ip {}.", source_iface, dest_ip);
     // Resend the ARP request and update the metadata
     auto dest_routingEntryOpt = routingTable->getRoutingEntry(dest_ip);
 
     if (dest_routingEntryOpt) {
         // If a valid routing entry is found, use its interface to send the ARP request
         RoutingInterface interface = routingTable->getRoutingInterface(source_iface);
-        ip_addr source_ip = ntohl(interface.ip);
+        ip_addr source_ip = interface.ip;
         mac_addr source_mac = interface.mac;
 
         // Ethernet header
@@ -149,7 +153,7 @@ void ArpCache::sendArpResponse(const uint32_t dest_ip, const mac_addr dest_mac, 
         arp_hdr.ar_pln = 4;                                         // Set protocol address length (4 for IPv4)
         arp_hdr.ar_op = htons(arp_op_reply);                        // Set ARP operation to reply (2)
         memcpy(arp_hdr.ar_sha, source_mac.data(), ETHER_ADDR_LEN);  // Set sender's MAC address (your MAC address)
-        arp_hdr.ar_sip = htonl(source_ip);                          // Set sender's IP address (your IP address, convert from string)
+        arp_hdr.ar_sip = source_ip;                                 // Set sender's IP address (your IP address, convert from string)
         memcpy(arp_hdr.ar_tha, dest_mac.data(), ETHER_ADDR_LEN);    // Set target's MAC address to zero (unknown)
         arp_hdr.ar_tip = dest_ip;                                   // Set target IP address (the IP you're looking for)
 
@@ -161,6 +165,9 @@ void ArpCache::sendArpResponse(const uint32_t dest_ip, const mac_addr dest_mac, 
         // 2. Serialize ARP Header
         packet.resize(packet.size() + sizeof(arp_hdr));                             // Resize the vector to accommodate the ARP header
         std::memcpy(packet.data() + sizeof(ether_hdr), &arp_hdr, sizeof(arp_hdr));  // Copy ARP header after Ethernet header
+
+        // Debug: Print ARP response
+        print_hdrs((uint8_t*)packet.data(), sizeof(ether_hdr) + sizeof(arp_hdr));
 
         // Proceed to resend the ARP request
         packetSender->sendPacket(packet, source_iface);  // TODO: Need to check this iface
@@ -195,6 +202,7 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
     // DO NOT CHANGE THIS
     std::unique_lock lock(mutex);
 
+    spdlog::info("Adding IP {} to Arp Cache", ip);
     // Check if there are any pending ARP requests for this IP
     auto it = requests.find(ip);
     if (it != requests.end()) {
@@ -215,6 +223,9 @@ void ArpCache::addEntry(uint32_t ip, const mac_addr& mac) {
             std::memcpy(ethHeader->ether_shost, source_mac.data(), ETHER_ADDR_LEN);  // Set source MAC address
             std::memcpy(ethHeader->ether_dhost, mac.data(), ETHER_ADDR_LEN);         // Set dest MAC address
 
+            spdlog::info("Resending queued packets to interface {}", awaitingPacket.iface);
+            // Debug: Print queued packet
+            print_hdrs((uint8_t*)awaitingPacket.packet.data(), sizeof(awaitingPacket.packet));
             packetSender->sendPacket(awaitingPacket.packet, awaitingPacket.iface);
         }
 
@@ -241,6 +252,7 @@ std::optional<mac_addr> ArpCache::getEntry(uint32_t dest_ip) {
 }
 
 void ArpCache::queuePacket(uint32_t dest_ip, const Packet& packet, const std::string& dest_iface) {
+    spdlog::info("Queuing packet for dest_ip {}.", dest_ip);
     // DO NOT CHANGE THIS
     std::unique_lock lock(mutex);
 
@@ -248,6 +260,7 @@ void ArpCache::queuePacket(uint32_t dest_ip, const Packet& packet, const std::st
     auto it = requests.find(dest_ip);
     if (it != requests.end()) {
         // If an ARP request already exists, add the packet to the awaitingPackets list
+        spdlog::info("ARP request already exists. Pushing back");
         it->second.awaitingPackets.push_back({packet, dest_iface});
     }
     else {
@@ -261,6 +274,7 @@ void ArpCache::queuePacket(uint32_t dest_ip, const Packet& packet, const std::st
         requests[dest_ip] = newRequest;
 
         // Send the ARP request since it is the first time
+        spdlog::info("Creating new ARP request since it doesn't exist");
         sendArpRequest(dest_ip);
     }
 }

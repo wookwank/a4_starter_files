@@ -75,12 +75,13 @@ void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::stri
 
     // ARP request or response
     // Extract relevant information from the ARP request
-    uint32_t senderIP = ntohl(arpHeader->ar_sip);  // Sender IP in the ARP reply
+    uint32_t senderIP = arpHeader->ar_sip;  // Sender IP in the ARP reply
     mac_addr senderMAC;
     std::copy(arpHeader->ar_sha, arpHeader->ar_sha + ETHER_ADDR_LEN, senderMAC.begin());  // Sender MAC in the ARP reply
 
     // Check if ARP request or response
     if (ntohs(arpHeader->ar_op) == ARP_REQUEST) {
+        spdlog::info("Received ARP request on interface {}.", iface);
         // This request is for one of the router's IP addresses
         auto* concreteArpCache = dynamic_cast<ArpCache*>(arpCache.get());
         if (concreteArpCache) {
@@ -100,7 +101,7 @@ void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::stri
                 if (i > 0) macStream << ":";
                 macStream << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(senderMAC[i]);
             }
-            spdlog::info("Received valid ARP reply for IP {} from MAC {}.", senderIP, macStream.str());
+            spdlog::info("Received valid ARP reply for IP {} from MAC {}. Adding Entry to ARP Cache", senderIP, macStream.str());
 
             arpCache->addEntry(senderIP, senderMAC);
         }
@@ -111,7 +112,7 @@ void StaticRouter::handleARP(const std::vector<uint8_t>& packet, const std::stri
                 if (i > 0) macStream << ":";
                 macStream << std::hex << static_cast<int>(senderMAC[i]);
             }
-            spdlog::info("Received valid ARP reply for IP {} from MAC {}.", senderIP, macStream.str());
+            spdlog::info("Received valid ARP reply for IP {} from MAC {}. Dropping ARP Reply", senderIP, macStream.str());
         }
     }
     else {
@@ -154,25 +155,31 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
 
     // Check if this router is the final destination
     if (isFinalDestination(ipHeader)) {
+        spdlog::info("This is the final destination for this packet");
         // Verify the protocol is ICMP
         if (ipHeader->ip_p != IP_PROTOCOL_ICMP) {
+            spdlog::info("Packet protocol is not ICMP");
             // Check for TCP / UDP
             if (ipHeader->ip_p != IP_PROTOCOL_UDP && ipHeader->ip_p != IP_PROTOCOL_TCP) {
                 // Not a UDP or TCP packet, no need to send Port Unreachable
+                spdlog::info("Packet is not UDP or TCP. No need to send Port Unreachable");
                 return;
             }
             else {
                 // Send ICMP 3,3
+                spdlog::info("Packet is UDP or TCP. Sending Port Unreachable");
                 auto* ethernetHeader = const_cast<sr_ethernet_hdr_t*>(reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data()));
                 sendPortUnreachable(ethernetHeader, const_cast<sr_ip_hdr_t*>(ipHeader), iface);
             }
         }
         else {
+            spdlog::info("Packet protocol is ICMP");
             // Extract the ICMP header
             auto* ethernetHeader = const_cast<sr_ethernet_hdr_t*>(reinterpret_cast<const sr_ethernet_hdr_t*>(packet.data()));
             sr_icmp_hdr_t* icmpHeader = const_cast<sr_icmp_hdr_t*>(reinterpret_cast<const sr_icmp_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t) + (ipHeader->ip_hl * 4)));
             if (icmpHeader->icmp_type == ICMP_TYPE_ECHO_REQUEST) {
                 // Send echo reply - ICMP type 0 (Echo Reply)
+                spdlog::info("Sending Echo request");
                 handleEchoRequest(ethernetHeader, const_cast<sr_ip_hdr_t*>(ipHeader), icmpHeader, iface);
                 return;
             }
@@ -183,6 +190,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
         }
     }
     else {
+        spdlog::info("This iface is not the final destination");
         // Handle TTL
         // If TTL == 0 drop
         // If TTL == 1 send ICMP type 11 code 0
@@ -200,6 +208,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
         // Check again if it becomes 0
         if (ipHeader->ip_ttl == 0) {
             // Send ICMP message type 11 code 0
+            spdlog::info("Sending Time Exceeded");
             sendICMPTimeExceeded(ipHeader, iface);
         }
 
@@ -216,7 +225,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
             // If it's cached, forward the packet, if not send an ARP request
 
             // IP address of the next hop
-            uint32_t targetIP = ntohl(route->gateway);
+            uint32_t targetIP = route->gateway;
 
             // Check if it's in ARP Cache
             auto arpEntry = arpCache->getEntry(targetIP);
@@ -242,6 +251,7 @@ void StaticRouter::handleIP(const std::vector<uint8_t>& packet, const std::strin
                 std::memcpy(ethernetFrame.data() + sizeof(sr_ethernet_hdr_t), ipHeader, sizeof(sr_ip_hdr_t) + ntohs(ipHeader->ip_len));
 
                 // 5. Send the packet through the correct interface
+                spdlog::info("MAC address found in ARP cache. Sending Packet right away");
                 packetSender->sendPacket(ethernetFrame, route->iface);
             }
             else {
@@ -361,7 +371,6 @@ void StaticRouter::handleEchoRequest(sr_ethernet_hdr_t* ethernetHeader, sr_ip_hd
     std::vector<uint8_t> packetVector(replyPacket, replyPacket + replyLength);
     packetSender->sendPacket(packetVector, iface);
 }
-
 
 void StaticRouter::sendPortUnreachable(sr_ethernet_hdr_t* ethernetHeader, sr_ip_hdr_t* ipHeader, const std::string& iface) {
     spdlog::info("Sending ICMP Port Unreachable message on interface {}.", iface);
