@@ -37,6 +37,8 @@ class ArpCache : public IArpCache {
 
    private:
     void loop();
+    void handleFailedArpRequest(ArpRequest& arpRequest);
+    void sendICMPHostUnreachable(const sr_ip_hdr_t* ipHeader, const sr_ethernet_hdr_t* originalEthHeader, const std::string& iface);
 
     std::chrono::milliseconds timeout;
 

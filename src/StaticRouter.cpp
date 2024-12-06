@@ -19,6 +19,7 @@
 #define ICMP_CODE_NET_UNREACHABLE 0   // ICMP Code 0:  Destination Unreachable (for Type 3)
 #define ICMP_TYPE_TIME_EXCEEDED 11    // ICMP Type 11: ICMP Time Exceeded
 #define ICMP_CODE_TTL_EXPIRED 0       // ICMP Code 0:  TTL expired
+#define ICMP_CODE_HOST_UNREACHABLE 1  // ICMP Code 1:  
 #define IP_PROTOCOL_ICMP 1            // ICMP Protocol number
 #define IP_PROTOCOL_UDP 0x11          // UDP Protocol number (17 in decimal)
 #define IP_PROTOCOL_TCP 0x06          // TCP Protocol number (6 in decimal)
@@ -504,3 +505,5 @@ void StaticRouter::sendICMPTimeExceeded(const sr_ip_hdr_t* ipHeader, const std::
 void forwardPacket(uint8_t* packet, int packetLength) {
     // Might need to move the forward packet code into here for organization
 }
+
+
