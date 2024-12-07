@@ -49,6 +49,8 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
         ArpRequest& request = it->second;
 
         if (request.timesSent >= 7) {
+            spdlog::warn("ARP request for IP {} failed after 7 attempts. Sending ICMP Host Unreachable.", ntohl(dest_ip));
+            
             // send ICMP dest host unreachable
             handleFailedArpRequest(request);
 
@@ -299,18 +301,41 @@ bool ArpCache::requestExists(uint32_t dest_ip) {
 void ArpCache::sendICMPHostUnreachable(const sr_ip_hdr_t* ipHeader, const sr_ethernet_hdr_t* originalEthHeader, const std::string& iface) {
     spdlog::info("Sending ICMP Destination Host Unreachable (Type: {}, Code: {}) on interface {}.", 3, 1, iface);
 
+    // Validate inputs
+    if (!ipHeader || !originalEthHeader) {
+        spdlog::error("Invalid input headers: ipHeader or originalEthHeader is null.");
+        return;
+    }
+
     // Allocate space for Ethernet, IP, and ICMP headers
     size_t packetLen = sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
     std::vector<uint8_t> packet(packetLen);
 
+    if (packet.size() < packetLen) {
+        spdlog::error("Packet size is smaller than expected: {}", packet.size());
+        return;
+    }
+
     // Fill Ethernet header
     auto* ethHeader = reinterpret_cast<sr_ethernet_hdr_t*>(packet.data());
     auto ifaceInfo = routingTable->getRoutingInterface(iface);
+
+    if (!ifaceInfo.isValid()) {
+        spdlog::error("Invalid interface info for iface: {}", iface);
+        return;
+    }
     // Set source MAC address
     std::memcpy(ethHeader->ether_shost, ifaceInfo.mac.data(), ETHER_ADDR_LEN);
     // Set destination MAC address using the original Ethernet header's source MAC address
     std::memcpy(ethHeader->ether_dhost, originalEthHeader->ether_shost, ETHER_ADDR_LEN);
     ethHeader->ether_type = htons(ethertype_ip);
+
+    spdlog::debug("Ethernet Header: Source MAC: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, Destination MAC: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, Type: {}",
+                  ethHeader->ether_shost[0], ethHeader->ether_shost[1], ethHeader->ether_shost[2],
+                  ethHeader->ether_shost[3], ethHeader->ether_shost[4], ethHeader->ether_shost[5],
+                  ethHeader->ether_dhost[0], ethHeader->ether_dhost[1], ethHeader->ether_dhost[2],
+                  ethHeader->ether_dhost[3], ethHeader->ether_dhost[4], ethHeader->ether_dhost[5],
+                  ntohs(ethHeader->ether_type));
 
     // Fill IP header
     auto* ipOutHeader = reinterpret_cast<sr_ip_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t));
@@ -327,13 +352,25 @@ void ArpCache::sendICMPHostUnreachable(const sr_ip_hdr_t* ipHeader, const sr_eth
     ipOutHeader->ip_sum = 0;                 // Zero out for checksum calculation
     ipOutHeader->ip_sum = cksum(ipOutHeader, sizeof(sr_ip_hdr_t));
 
+    spdlog::debug("IP Header: Source IP: {}, Destination IP: {}, TTL: {}, Protocol: {}",
+                  ntohl(ipOutHeader->ip_src), ntohl(ipOutHeader->ip_dst), ipOutHeader->ip_ttl, ipOutHeader->ip_p);
+
     // Fill ICMP header
     auto* icmpHeader = reinterpret_cast<sr_icmp_t3_hdr_t*>(packet.data() + sizeof(sr_ethernet_hdr_t) + sizeof(sr_ip_hdr_t));
+
+    if (!ipHeader) {
+        spdlog::error("IP header is null. Cannot construct ICMP message.");
+        return;
+    }
+
     icmpHeader->icmp_type = 3;                                // Type 3, Destination Unreachable
     icmpHeader->icmp_code = 1;                                // Code 1, Host Unreachable
     icmpHeader->icmp_sum = 0;                                 // Zero out for checksum calculation
     std::memcpy(icmpHeader->data, ipHeader, ICMP_DATA_SIZE);  // Copy original IP header and first 8 bytes of payload
     icmpHeader->icmp_sum = cksum(icmpHeader, sizeof(sr_icmp_t3_hdr_t));
+
+    spdlog::debug("ICMP Header: Type: {}, Code: {}, Checksum: {}",
+                  icmpHeader->icmp_type, icmpHeader->icmp_code, ntohs(icmpHeader->icmp_sum));
 
     // Send the packet using the packet sender
     print_hdrs((uint8_t*)packet.data(), sizeof(sr_ethernet_hdr) + sizeof(sr_ip_hdr) + sizeof(sr_icmp_t3_hdr));
@@ -347,8 +384,20 @@ void ArpCache::handleFailedArpRequest(ArpRequest& arpRequest) {
 
     for (const auto& awaitingPacket : arpRequest.awaitingPackets) {
         // Extract headers from the awaiting packet
+        if (awaitingPacket.packet.empty()) {
+            spdlog::warn("Encountered an empty packet while processing awaiting ARP packets.");
+            continue;
+        }
+
         const auto* ethernetHeader = const_cast<sr_ethernet_hdr_t*>(reinterpret_cast<const sr_ethernet_hdr_t*>(awaitingPacket.packet.data()));
         const auto* ipHeader = reinterpret_cast<const sr_ip_hdr_t*>(awaitingPacket.packet.data() + sizeof(sr_ethernet_hdr_t));
+
+        if (!ethernetHeader || !ipHeader) {
+            spdlog::error("Malformed packet in ARP request queue for IP {}. Skipping.", ntohl(arpRequest.ip));
+            continue;
+        }
+
+        spdlog::debug("Processing awaiting packet for IP {} on interface {}.", ntohl(arpRequest.ip), awaitingPacket.iface);
 
         // Send ICMP Host Unreachable for this packet
         sendICMPHostUnreachable(ipHeader, ethernetHeader, awaitingPacket.iface);
