@@ -69,7 +69,13 @@ std::optional<RoutingEntry> RoutingTable::getRoutingEntry(ip_addr ip) {
 }
 
 RoutingInterface RoutingTable::getRoutingInterface(const std::string& iface) {
-    return routingInterfaces.at(iface);
+    auto it = routingInterfaces.find(iface);
+    if (it == routingInterfaces.end()) {
+        spdlog::error("Interface '{}' not found in routing table.", iface);
+        throw std::invalid_argument("Interface not found");
+    }
+    return it->second;
+    // return routingInterfaces.at(iface);
 }
 
 void RoutingTable::setRoutingInterface(const std::string& iface, const mac_addr& mac, const ip_addr& ip) {

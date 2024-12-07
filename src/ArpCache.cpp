@@ -50,7 +50,7 @@ void ArpCache::sendArpRequest(const uint32_t dest_ip) {
 
         if (request.timesSent >= 7) {
             spdlog::warn("ARP request for IP {} failed after 7 attempts. Sending ICMP Host Unreachable.", ntohl(dest_ip));
-            
+
             // send ICMP dest host unreachable
             handleFailedArpRequest(request);
 
@@ -318,12 +318,21 @@ void ArpCache::sendICMPHostUnreachable(const sr_ip_hdr_t* ipHeader, const sr_eth
 
     // Fill Ethernet header
     auto* ethHeader = reinterpret_cast<sr_ethernet_hdr_t*>(packet.data());
-    auto ifaceInfo = routingTable->getRoutingInterface(iface);
+    // auto ifaceInfo = routingTable->getRoutingInterface(iface);
+    RoutingInterface ifaceInfo;  // Declare outside the try block
 
-    if (!ifaceInfo.isValid()) {
-        spdlog::error("Invalid interface info for iface: {}", iface);
+    try {
+        ifaceInfo = routingTable->getRoutingInterface(iface);
+        // Proceed with ifaceInfo
+    } catch (const std::invalid_argument& e) {
+        spdlog::error("Failed to retrieve interface '{}': {}", iface, e.what());
         return;
     }
+
+    // if (!ifaceInfo.isValid()) {
+    //     spdlog::error("Invalid interface info for iface: {}", iface);
+    //     return;
+    // }
     // Set source MAC address
     std::memcpy(ethHeader->ether_shost, ifaceInfo.mac.data(), ETHER_ADDR_LEN);
     // Set destination MAC address using the original Ethernet header's source MAC address
